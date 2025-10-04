@@ -18,6 +18,8 @@ This is where the discord tokens are put in.
 ### servers.txt
 Server IDs, one server per row. For obvious reasons, the aforementioned channels should be in these servers.
 
+
+
 This project is currently not maintained on a regular basis, feel free to fork. Any issues that open up will be addressed in due time.
 
 //Phoenix56
