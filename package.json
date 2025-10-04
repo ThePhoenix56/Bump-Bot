@@ -1,0 +1,13 @@
+{
+  "name": "Bumpbot",
+  "version": "1.0.0",
+  "description": "A Disboard bot that bumps your server automatically",
+  "main": "main.js",
+  "author": "Phoenix56",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^26.0.0"
+  }
+}

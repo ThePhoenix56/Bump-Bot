@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bump Bot</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      #titleImage {
+        width: 50%;
+        height: auto;
+        display: block;
+        margin-bottom: 20px;
+      }
+
+      #columns {
+        display: flex;
+        width: 100%;
+        max-width: 1000px;
+      }
+
+      .column {
+        flex: 1;
+        padding: 0 20px;
+        box-sizing: border-box;
+      }
+      .column:first-child {
+        border-right: 1px solid #ccc;
+      }
+
+      .form-row {
+        margin-bottom: 1rem;
+      }
+      label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 0.25rem;
+      }
+      input[type='text'] {
+        width: 100%;
+        padding: 0.5rem;
+        font-size: 1rem;
+        box-sizing: border-box;
+      }
+      button {
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+      #tasksList {
+        list-style: none;
+        padding: 0;
+        margin-top: 1.5rem;
+      }
+      #tasksList li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem;
+        background: #f0f0f0;
+        border-radius: 4px;
+        margin-bottom: 0.5rem;
+      }
+      #tasksList li button {
+        background: none;
+        border: none;
+        font-size: 1.1rem;
+        color: #c00;
+        cursor: pointer;
+      }
+      #tasksList li button:hover {
+        color: #900;
+      }
+
+      #available-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      #available-header h2 {
+        margin: 0;
+      }
+      #availableList {
+        list-style: none;
+        padding: 0;
+        margin-top: 1rem;
+      }
+      #availableList li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem;
+        background: #eef;
+        border-radius: 4px;
+        margin-bottom: 0.5rem;
+      }
+      #availableList li button {
+        background: none;
+        border: none;
+        font-size: 0.9rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        background-color: #28a;
+        color: #fff;
+        cursor: pointer;
+      }
+      #availableList li button:hover {
+        background-color: #159;
+      }
+    </style>
+  </head>
+  <body>
+    <img
+      id="titleImage"
+      src="bumpbotimg.png"
+      alt="BUMP BOT"
+    />
+
+    <div id="columns">
+      <div class="column" id="leftCol">
+        <div class="form-row">
+          <label for="tokenInput">Discord Token</label>
+          <input
+            type="text"
+            id="tokenInput"
+            placeholder="Enter your Discord token"
+          />
+        </div>
+        <div class="form-row">
+          <label for="guildInput">Server ID (Guild ID)</label>
+          <input
+            type="text"
+            id="guildInput"
+            placeholder="Enter the Discord server (guild) ID"
+          />
+        </div>
+        <div class="form-row">
+          <label for="channelInput">Channel ID</label>
+          <input
+            type="text"
+            id="channelInput"
+            placeholder="Enter the channel ID"
+          />
+        </div>
+
+        <button id="bumpBtn">Bump</button>
+        <ul id="tasksList"></ul>
+      </div>
+
+      <div class="column" id="rightCol">
+        <div id="available-header">
+          <h2>Available Tokens</h2>
+          <button id="refreshBtn">Refresh</button>
+        </div>
+        <ul id="availableList"></ul>
+      </div>
+    </div>
+
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        const tokenInput = document.getElementById('tokenInput');
+        const guildInput = document.getElementById('guildInput');
+        const channelInput = document.getElementById('channelInput');
+        const bumpBtn = document.getElementById('bumpBtn');
+        const tasksList = document.getElementById('tasksList');
+
+        function renderTasks(tasks) {
+          tasksList.innerHTML = '';
+          tasks.forEach((t) => {
+            const li = document.createElement('li');
+            li.textContent = `#${t.id}  (guild: ${t.guildId}, channel: ${t.channelId})`;
+            const xBtn = document.createElement('button');
+            xBtn.textContent = '×';
+            xBtn.title = 'Stop this bump task';
+            xBtn.addEventListener('click', () => {
+              window.api.stopTask(t.id);
+            });
+            li.appendChild(xBtn);
+            tasksList.appendChild(li);
+          });
+        }
+        window.api.onTasksUpdated((tasks) => {
+          renderTasks(tasks);
+        });
+
+        bumpBtn.addEventListener('click', () => {
+          const token = tokenInput.value.trim();
+          const guildId = guildInput.value.trim();
+          const channelId = channelInput.value.trim();
+          if (!token || !guildId || !channelId) {
+            alert('Please fill in all three fields before hitting Bump.');
+            return;
+          }
+          window.api.startTask(token, guildId, channelId);
+          tokenInput.value = '';
+          guildInput.value = '';
+          channelInput.value = '';
+        });
+
+        const refreshBtn = document.getElementById('refreshBtn');
+        const availableList = document.getElementById('availableList');
+
+        let availableTokens = []; 
+
+        function renderAvailableList() {
+          availableList.innerHTML = '';
+          availableTokens.forEach((item, idx) => {
+            const li = document.createElement('li');
+            li.style.display = 'flex';
+            li.style.justifyContent = 'space-between';
+            li.style.alignItems = 'center';
+
+            const info = document.createElement('span');
+            info.textContent = `${item.userName}  (${item.serverName} › ${item.channelName})`;
+            li.appendChild(info);
+
+            const bumpBtn2 = document.createElement('button');
+            bumpBtn2.textContent = 'Bump';
+            bumpBtn2.title = 'Start bumping with this token';
+            bumpBtn2.addEventListener('click', () => {
+              window.api.startTask(item.token, item.guildId, item.channelId);
+              availableTokens.splice(idx, 1);
+              renderAvailableList();
+            });
+            li.appendChild(bumpBtn2);
+
+            availableList.appendChild(li);
+          });
+
+          if (availableTokens.length === 0) {
+            const msg = document.createElement('li');
+            msg.textContent = '— no available tokens —';
+            msg.style.fontStyle = 'italic';
+            msg.style.color = '#555';
+            availableList.appendChild(msg);
+          }
+        }
+
+        window.api.onTokensLoaded((data) => {
+          availableTokens = data;
+          renderAvailableList();
+        });
+
+        refreshBtn.addEventListener('click', () => {
+          window.api.loadTokens();
+        });
+
+        window.api.loadTokens();
+      });
+    </script>
+  </body>
+</html>
